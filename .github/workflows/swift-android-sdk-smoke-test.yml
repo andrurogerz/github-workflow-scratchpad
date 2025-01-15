@@ -43,11 +43,25 @@ jobs:
         run: |
           echo "sysroot=$(resolve-path ${{ steps.setup-ndk.outputs.ndk-path }}\toolchains\llvm\prebuilt\${{ matrix.host-tag }}\sysroot)" >> $env:GITHUB_OUTPUT
           echo "sdkroot=$(resolve-path $env:SDKROOT\..\..\..\..\Android.platform\Developer\SDKs\Android.sdk)" >> $env:GITHUB_OUTPUT
+          echo "xctestroot=$(resolve-path $env:SDKROOT\..\..\..\..\Android.platform\Developer\Library\XCTest-development)" >> $env:GITHUB_OUTPUT
           echo "clang-resource-dir=$(& $(resolve-path "${{ steps.setup-ndk.outputs.ndk-path }}\toolchains\llvm\prebuilt\${{ matrix.host-tag }}\bin\clang.exe") -print-resource-dir)" >> $env:GITHUB_OUTPUT
 
-      - name: Build
+      - name: Print Swift environment
         run: |
           echo "sysroot:${{ steps.android-swift-env.outputs.sysroot }}"
           echo "sdkroot:${{ steps.android-swift-env.outputs.sdkroot }}"
+          echo "xctestroot:${{ steps.android-swift-env.outputs.xctestroot }}"
           echo "clang-resource-dir:${{ steps.android-swift-env.outputs.clang-resource-dir }}"
 
+      - name: Build cassowary project
+        run: |
+          swift build `
+            --package-path ${{ github.workspace }}/SourceCache/cassowary `
+            --triple ${{ matrix.arch }}-unknown-linux-android${{ matrix.api-level }} `
+            --sdk "${{ steps.android-swift-env.outputs.sysroot }}" `
+            -Xswiftc -sdk -Xswiftc "${{ steps.android-swift-env.outputs.sdkroot }}" `
+            -Xswiftc -sysroot -Xswiftc "${{ steps.android-swift-env.outputs.sysroot }}" `
+            -Xswiftc -I -Xswiftc "${{ steps.android-swift-env.outputs.sdkroot }}\usr\include" `
+            -Xswiftc -Xclang-linker -Xswiftc -resource-dir -Xswiftc -Xclang-linker -Xswiftc ${{ steps.android-swift-env.outputs.clang-resource-dir }} `
+            -Xswiftc -I -Xswiftc "${{ steps.android-swift-env.outputs.xctestroot }}\usr\lib\swift\android" `
+            -Xlinker "-L${{ steps.android-swift-env.outputs.xctestroot }}\usr\lib\swift\android\${{ matrix.arch }}"
