@@ -43,7 +43,7 @@ jobs:
         run: |
           echo "sysroot=$(resolve-path ${{ steps.setup-ndk.outputs.ndk-path }}\toolchains\llvm\prebuilt\${{ matrix.host-tag }}\sysroot)" >> $env:GITHUB_OUTPUT
           echo "sdkroot=$(resolve-path $env:SDKROOT\..\..\..\..\Android.platform\Developer\SDKs\Android.sdk)" >> $env:GITHUB_OUTPUT
-          echo "clang-resource-dir=$(& $(resolve-path "$env:ANDROID_NDK_ROOT\toolchains\llvm\prebuilt\${{ matrix.host-tag }}\bin\clang.exe") -print-resource-dir)" >> $env:GITHUB_OUTPUT
+          echo "clang-resource-dir=$(& $(resolve-path "${{ steps.setup-ndk.outputs.ndk-path }}\toolchains\llvm\prebuilt\${{ matrix.host-tag }}\bin\clang.exe") -print-resource-dir)" >> $env:GITHUB_OUTPUT
 
       - name: Build
         run: |
