@@ -1,0 +1,51 @@
+name: Swift Android SDK Smoke Test
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+jobs:
+  build-spm:
+    runs-on: windows-latest
+    name: Build ${{ matrix.arch }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            android-api-level: 29
+
+          - arch: aarch64
+            android-api-level: 29
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: compnerd/gha-setup-vsdevenv@main
+
+      - uses: compnerd/gha-setup-swift@main
+        with:
+          github-repo: thebrowsercompany/swift-build
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          release-asset-name: installer-amd64.exe
+          release-tag-name: "20250115.2"
+
+      - uses: nttld/setup-ndk@afb4c9964b521afb97c864b7d40b11e6911bd410 # v1.5.0
+        id: setup-ndk
+        with:
+          ndk-version: r26d
+          local-cache: true
+
+      - name: Setup Swift environment
+        id: swift-env
+        run: |
+          echo "android-sysroot=$(resolve-path ${{ steps.setup-ndk.outputs.ndk-path }}\toolchains\llvm\prebuilt\windows-x86_64\sysroot)" >> $env:GITHUB_OUTPUT
+          echo "android-sdkroot=$(resolve-path $env:SDKROOT\..\..\..\..\Android.platform\Developer\SDKs\Android.sdk)" >> $env:GITHUB_OUTPUT
+
+
+      - name: Build
+        run: |
+          echo "android-sysroot:${{ steps.swift-env.outputs.android-sysroot }}"
+          echo "android-sdkroot:${{ steps.swift-env.outputs.android-sdkroot }}"
+
