@@ -12,15 +12,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - arch: x86_64
-            android-api-level: 29
-
-          - arch: aarch64
-            android-api-level: 29
+        arch: [ x86_64, aarch64 ]
+        api-level: [ 29 ]
+        host-tag: [ windows-x86_64 ]
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout cassowary project
+        uses: actions/checkout@v4
+        with:
+          repository: compnerd/cassowary
+          path: ${{ github.workspace }}/SourceCache/cassowary
 
       - uses: compnerd/gha-setup-vsdevenv@main
 
@@ -38,14 +39,15 @@ jobs:
           local-cache: true
 
       - name: Setup Swift environment
-        id: swift-env
+        id: android-swift-env
         run: |
-          echo "android-sysroot=$(resolve-path ${{ steps.setup-ndk.outputs.ndk-path }}\toolchains\llvm\prebuilt\windows-x86_64\sysroot)" >> $env:GITHUB_OUTPUT
-          echo "android-sdkroot=$(resolve-path $env:SDKROOT\..\..\..\..\Android.platform\Developer\SDKs\Android.sdk)" >> $env:GITHUB_OUTPUT
-
+          echo "sysroot=$(resolve-path ${{ steps.setup-ndk.outputs.ndk-path }}\toolchains\llvm\prebuilt\${{ matrix.host-tag }}\sysroot)" >> $env:GITHUB_OUTPUT
+          echo "sdkroot=$(resolve-path $env:SDKROOT\..\..\..\..\Android.platform\Developer\SDKs\Android.sdk)" >> $env:GITHUB_OUTPUT
+          echo "clang-resource-dir=$(& $(resolve-path "$env:ANDROID_NDK_ROOT\toolchains\llvm\prebuilt\${{ matrix.host-tag }}\bin\clang.exe") -print-resource-dir)" >> $env:GITHUB_OUTPUT
 
       - name: Build
         run: |
-          echo "android-sysroot:${{ steps.swift-env.outputs.android-sysroot }}"
-          echo "android-sdkroot:${{ steps.swift-env.outputs.android-sdkroot }}"
+          echo "sysroot:${{ steps.android-swift-env.outputs.sysroot }}"
+          echo "sdkroot:${{ steps.android-swift-env.outputs.sdkroot }}"
+          echo "clang-resource-dir:${{ steps.android-swift-env.outputs.clang-resource-dir }}"
 
